@@ -49,8 +49,8 @@ wins <- mir_df |>
   mutate(wins = ifelse(str_detect(puntuacion, "P"), 0, 1)) |>
   summarise(wins = list(wins)) |>
   left_join(medias) |>
-  left_join(par) |>
-  left_join()
+  left_join(par) 
+
 
 font <- "Roboto Condensed"#fuente descargada en el equipo
 
