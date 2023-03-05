@@ -1,0 +1,90 @@
+
+#librerias
+library(tidyverse)
+library(gt)
+library(gtExtras)
+library(rvest)
+library(cropcircles)
+
+#datos para funcion
+
+tabla <- c(".show table", ".fade table")#elementos de las tablas
+liga <- c("TRegular", "Europa")#columna competición
+
+#función para extraer las dos tablas europa y liga nacional
+
+mir_table <- function(tabla, liga) {
+  d <- "https://www.proballers.com/es/baloncesto/jugador/47708/nikola-mirotic/partidos" |>
+    read_html() |>
+    html_element(paste0(tabla)) |>
+    html_table() |>
+    janitor::clean_names() |>
+    mutate(comp = liga)
+
+  return(d)
+}
+
+mir_df <- map2_dfr(tabla, liga, mir_table)
+
+#partidos jugados
+par <- mir_df |>
+  count(comp, name = "G")
+  
+#medias en las competiciones
+medias <- mir_df |>
+  group_by(comp) |>
+  summarise(
+    pts = mean(pts),
+    reb = mean(reb),
+    ast = mean(ast),
+    val = mean(val),
+    .groups = "drop"
+  ) |>
+  ungroup() |>
+  mutate(across(c(pts:val), round, 1))
+  
+#victorias derrotas en ambas competiciones
+wins <- mir_df |>
+  group_by(comp) |>
+  mutate(wins = ifelse(str_detect(puntuacion, "P"), 0, 1)) |>
+  summarise(wins = list(wins)) |>
+  left_join(medias) |>
+  left_join(par) |>
+  left_join()
+
+font <- "Roboto Condensed"#fuente descargada en el equipo
+
+#tabla
+wins |>
+  gt() |>
+  gt_plt_winloss(wins) |>
+  cols_label(
+    comp = gt::html("<span style='font-weight:bold;font-size:14px'>COMPT</span>"),
+    wins = gt::html("<span style='font-weight:bold;font-size:14px'>V/D</span>"),
+    pts = gt::html("<span style='font-weight:bold;font-size:14px'>PTS</span>"),
+    reb = gt::html("<span style='font-weight:bold;font-size:14px'>REB</span>"),
+    ast = gt::html("<span style='font-weight:bold;font-size:14px'>AST</span>"),
+    val = gt::html("<span style='font-weight:bold;font-size:14px'>VAL</span>"),
+    G = gt::html("<span style='font-weight:bold;font-size:14px'>GM</span>"),
+  ) |>
+  tab_options(
+    table.font.names = font,
+    table.background.color = "white",
+    table.font.size = 12,
+    data_row.padding = px(.01),
+    source_notes.font.size = 10
+  ) |>
+  tab_header(
+    title = md("<img src='https://www.freelogovectors.net/svg04/fc-barcelona-basketball-logo.svg'
+               style='height:50px;'><br><img src='https://www.proballers.com/media/cache/resize_300/ul/player/backup/32993-1-5d97be3002031.jpg'
+               style='height:40px;'><span style='font-weight:bold;font-size:24px'> NIKOLA MIROTIC</span>"),
+    subtitle = md("<span style='font-weight:400;color:#8C8C8C;font-size:12px'>Comparativa de su rendimiento hasta J20<br></span>")
+  ) |>
+  tab_source_note(
+    source_note = md(" **Datos**:   &nbsp;&nbsp;*@Proballers_com*&nbsp;&nbsp;<img src='https://www.proballers.com/images/proballers-blue.svg'
+                     style='height:12.5px;'><br>
+                     **Gráfico**: *Ivo Villanueva* &bull;  <span style='color:#00acee;font-family: \"Font Awesome 5 Brands\"'>&#xf099;</span> <b>@elcheff</b>")
+  )|> gtsave("mirotic.png")
+  
+  
+  #elcheff 5/12/2023
