@@ -4,7 +4,7 @@ library(tidyverse)
 library(gt)
 library(gtExtras)
 library(rvest)
-library(cropcircles)
+
 
 #datos para funcion
 
