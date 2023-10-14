@@ -75,7 +75,7 @@ equipo_ideal <- function(data) {
     arrange(desc(ult3)) %>%
     head(2) %>%#data with only the best two EXT
     bind_rows(data %>%
-      filter(lic != "EXT")) #Joint with the rest of lic
+      filter(lic != "EXT")) #Join with the rest of lic
 
   ideal <- ext %>%
     filter(pos == "Bases") %>%
@@ -99,7 +99,6 @@ equipo_ideal <- function(data) {
 #count number of JFL and substrac for 4
 
   jfl <- count(ideal, lic) %>%
-    ungroup() %>%
     filter(lic == "JFL") %>%
     select(n) %>%
     mutate(n = 4 - n)
